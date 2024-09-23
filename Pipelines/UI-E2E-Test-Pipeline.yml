@@ -1,0 +1,151 @@
+resources:
+  pipelines:
+  - pipeline: ITM-Web-Prod
+    source: ITM.Web-Prod
+    trigger: true 
+  - pipeline: ITM-Web-Demo
+    source: ITM.Web-Demo
+    trigger: true 
+  - pipeline: ITM-Web-Stage
+    source: ITM.Web-Stage
+    trigger: true 
+  - pipeline: ITM-Tasks-Prod
+    source: ITM.Tasks-Prod
+    trigger: true 
+  - pipeline: ITM-Tasks-Demo
+    source: ITM.Tasks-Demo
+    trigger: true 
+  - pipeline: ITM-Tasks-Stage
+    source: ITM.Tasks-Stage
+    trigger: true 
+  - pipeline: ITM-Account-Prod
+    source: ITM.Account-Prod
+    trigger: true 
+  - pipeline: ITM-Account-Demo
+    source: ITM.Account-Demo
+    trigger: true 
+  - pipeline: ITM-Account-Stage
+    source: ITM.Account-Stage
+    trigger: true 
+
+trigger:
+ - none
+variables:
+- group: UI-E2E-Variable-Group
+
+#Pipeline Stages#
+stages:
+- stage: UI_E2E_Tests
+  jobs:
+  - job: UI_E2E_Tests
+    displayName: UI_E2E_Tests
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: self
+
+    - task: PowerShell@2
+      displayName: GetEnvironment
+      inputs:
+        targetType: 'inline'
+        script: |
+          $triggeringsourcebranch = if ("$(Resources.TriggeringAlias)" -match "Prod") {"prod"} elseif ("$(Resources.TriggeringAlias)" -match "Demo") {"demo"} elseif ("$(Resources.TriggeringAlias)" -match "Stage") {"stage"} else {"dev"};
+          $triggeringsourcepipeline = "$(Resources.TriggeringAlias)"
+          Write-Host "##vso[task.setvariable variable=Environment]$triggeringsourcebranch"
+          Write-Host "##vso[task.setvariable variable=Source]$triggeringsourcepipeline"
+        failOnStderr: true
+        showWarnings: true
+    - task: PowerShell@2
+      displayName: TrggeringSource
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "This pipeline is triggered by "$(Source)" in "$(Environment)" environment"
+        failOnStderr: true
+        showWarnings: true
+
+    - task: PowerShell@2
+      displayName: Config
+      inputs:
+        targetType: 'inline'
+        script: |
+          Copy-Item -Path "$(Build.SourcesDirectory)\src\test\java\Utils\EnvironmentVariables.$(Environment).properties" -Destination "$(Build.SourcesDirectory)\src\test\java\Utils\EnvironmentVariables.properties" -Force
+          Remove-Item "$(Build.SourcesDirectory)\src\test\java\Utils\EnvironmentVariables.*.properties" -Force
+        failOnStderr: true
+        showWarnings: true
+    - task: JavaToolInstaller@0
+      inputs:
+        versionSpec: '17'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'PreInstalled'
+
+    # - task: Maven@4
+    #   inputs:
+    #     mavenPomFile: 'pom.xml'
+    #     publishJUnitResults: true
+    #     testResultsFiles: '**/TEST-*.xml'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'clean'
+      displayName: 'Maven Clean'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'compile'
+      displayName: 'Maven Compile'
+
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'test'
+      continueOnError: true
+      displayName: 'Run Selenium Tests'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src/test/java/TestReport'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/TestReport.zip'
+        replaceExistingArchive: true
+      displayName: 'Archive Test Report'
+
+    - task: PowerShell@2
+      displayName: EmailReport
+      inputs:
+        targetType: 'inline'
+        script: |
+          $triggeringPipeline = "$(Source)"
+          $triggeringPipelineEnv = "$(Environment)"
+          Write-Host "Sending Email with Reports attached" -ForegroundColor "Red"
+          $body = "`n Hello Admins, `n`n Hope you are doing great! `n`n Please check attached report for pipeline $triggeringPipeline deployed in $triggeringPipelineEnv environment `n`n Thanks"
+          #Send Email !    
+          # Define the sender, recipient, subject, and body of the email
+          $from = "$(AutomationEmail)"
+          $to = ""
+          $subject = "ITM | $triggeringPipeline | Report"
+          # Set up the SMTP server and credentials
+          $smtpServer = "smtp.gmail.com"
+          $smtpPort = 587
+          $smtpUsername = "$(AutomationEmail)"
+          $smtpPassword = "$(AutomationPassword)"
+          # Create the email message object
+          $email = New-Object System.Net.Mail.MailMessage($from, $to, $subject, $body)
+          $email.IsBodyHtml = $false
+          # Add attachments
+          $attachmentPath = "$(Build.ArtifactStagingDirectory)/TestReport.zip"
+          $attachment = New-Object System.Net.Mail.Attachment($attachmentPath)
+          $email.Attachments.Add($attachment)
+          # Set up the SMTP client
+          $smtpClient = New-Object System.Net.Mail.SmtpClient($smtpServer, $smtpPort)
+          $smtpClient.EnableSsl = $true
+          $smtpClient.Credentials = New-Object System.Net.NetworkCredential($smtpUsername, $smtpPassword)
+          # Send the email
+          $smtpClient.Send($email)
+        pwsh: true
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/TestReport.zip'
+        artifact: 'TestReport'
+      displayName: 'Publish Test Report Artifact'

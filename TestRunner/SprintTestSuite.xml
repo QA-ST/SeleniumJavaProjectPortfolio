@@ -1,0 +1,26 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="Smoke Test Suite">
+    <listeners>
+        <listener class-name="ExtentReporter.Listeners"/>
+    </listeners>
+
+    <test name="Sprint tests suite">
+        <groups>
+            <run>
+                <include name="Sprint test case"/>
+            </run>
+        </groups>
+
+        <classes>
+            <class name="Tests.SprintTestTickets.TC01_AddingEstimateToTask"/>
+            <class name="Tests.SprintTestTickets.TC02_AddingProgressReport"/>
+            <class name="Tests.SprintTestTickets.TC03_AddBusinessGoalToProject"/>
+            <class name="Tests.SprintTestTickets.TC04_VerifyInputAndOutputCostNotRequiredInCategory"/>
+            <class name="Tests.SprintTestTickets.TC05_VerifyValidationAppearsNotSavingTaskMemberDetails"/>
+            <class name="Tests.SprintTestTickets.TC06_VerifyGanttDetailsFromGanttSnapshot"/>
+            <class name="Tests.SprintTestTickets.TC07_VerifyCategoryAmountFromMyProfessionalPage"/>
+            <class name="Tests.SprintTestTickets.TC08_VerifyPasswordUpdateIsNotRequiredWhenChangingUserEmail"/>
+            <class name="Tests.SprintTestTickets.TC09_AutomaticProgressReportDefaultEnabledChecked"/>
+        </classes>
+    </test>
+</suite>

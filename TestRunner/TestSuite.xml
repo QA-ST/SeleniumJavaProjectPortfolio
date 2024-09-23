@@ -1,0 +1,33 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="Smoke Test Suite">
+    <listeners>
+        <listener class-name="ExtentReporter.Listeners"/>
+    </listeners>
+
+    <test name="Tests suite">
+        <groups>
+            <run>
+                <include name="Smoke test case"/>
+                <include name="Sprint test case"/>
+            </run>
+        </groups>
+
+        <classes>
+            <class name="Tests.SmokeTests.TC01_AddWaterfallProject"/>
+            <class name="Tests.SmokeTests.TC02_DeleteWaterfallProject"/>
+            <class name="Tests.SmokeTests.TC03_AddAgileProject"/>
+            <class name="Tests.SmokeTests.TC04_EstimatedEffortHoursTest"/>
+            <class name="Tests.SmokeTests.TC05_HourlyRevenueTest"/>
+            <class name="Tests.SmokeTests.TC06_OverallTesting"/>
+            <class name="Tests.SprintTestTickets.TC01_AddingEstimateToTask"/>
+            <class name="Tests.SprintTestTickets.TC02_AddingProgressReport"/>
+            <class name="Tests.SprintTestTickets.TC03_AddBusinessGoalToProject"/>
+            <class name="Tests.SprintTestTickets.TC04_VerifyInputAndOutputCostNotRequiredInCategory"/>
+            <class name="Tests.SprintTestTickets.TC05_VerifyValidationAppearsNotSavingTaskMemberDetails"/>
+            <class name="Tests.SprintTestTickets.TC06_VerifyGanttDetailsFromGanttSnapshot"/>
+            <class name="Tests.SprintTestTickets.TC07_VerifyCategoryAmountFromMyProfessionalPage"/>
+            <class name="Tests.SprintTestTickets.TC08_VerifyPasswordUpdateIsNotRequiredWhenChangingUserEmail"/>
+            <class name="Tests.SprintTestTickets.TC09_AutomaticProgressReportDefaultEnabledChecked"/>
+        </classes>
+    </test>
+</suite>
